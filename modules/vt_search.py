@@ -36,7 +36,7 @@ def search_family(vt_cli_path: str, query: str, limit: int = 20) -> list:
     cmd = [
         vt_cli_path, "search", query,
         "--limit", str(limit),
-        "--json",
+        "--format", "json",
     ]
     logger.info("VT search: %s (limit=%d)", query, limit)
     logger.debug("Command: %s", " ".join(cmd))
@@ -142,7 +142,7 @@ def download_samples(
 
         cmd = [
             vt_cli_path, "download", sha,
-            "--output", dest_path,
+            "--output", dest_dir,
         ]
         logger.info("Downloading %s", sha)
         try:
@@ -152,9 +152,28 @@ def download_samples(
                 text=True,
                 timeout=600,
             )
-            if proc.returncode == 0 and os.path.exists(dest_path):
-                logger.info("Downloaded %s (%d bytes)", sha, os.path.getsize(dest_path))
-                results.append({"sha256": sha, "path": dest_path, "success": True})
+            # vt-cli saves as <hash> or <hash>.zip in the output dir
+            if proc.returncode == 0:
+                # Check common naming patterns vt-cli uses
+                found = False
+                for candidate in [dest_path, dest_path + ".zip"]:
+                    if os.path.exists(candidate):
+                        dest_path = candidate
+                        found = True
+                        break
+                if not found:
+                    # Search for any file containing the hash prefix
+                    for f in os.listdir(dest_dir):
+                        if f.startswith(sha[:16]):
+                            dest_path = os.path.join(dest_dir, f)
+                            found = True
+                            break
+                if found:
+                    logger.info("Downloaded %s (%d bytes)", sha, os.path.getsize(dest_path))
+                    results.append({"sha256": sha, "path": dest_path, "success": True})
+                else:
+                    logger.error("Download returned 0 but file not found for %s", sha)
+                    results.append({"sha256": sha, "path": dest_path, "success": False})
             else:
                 logger.error(
                     "Download failed for %s (rc=%d): %s",
