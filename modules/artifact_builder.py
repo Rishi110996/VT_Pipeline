@@ -53,12 +53,21 @@ def build_artifact_zip(
     # Collect YARA rules from verdicts
     yara_rules = {}
     combined_yara = []
+    snort_rules = {}
+    combined_snort = []
+    all_cif_entries = []
     for v in parsed_verdicts:
+        sha_prefix = v["sha256"][:16]
         if v.get("yara_rule"):
-            sha_prefix = v["sha256"][:16]
             rule_filename = f"{family}_{sha_prefix}.yara"
             yara_rules[rule_filename] = v["yara_rule"]
             combined_yara.append(v["yara_rule"])
+        if v.get("snort_rules"):
+            snort_filename = f"{family}_{sha_prefix}.rules"
+            snort_rules[snort_filename] = v["snort_rules"]
+            combined_snort.append(v["snort_rules"])
+        if v.get("cif_entries"):
+            all_cif_entries.extend(v["cif_entries"])
 
     # Build the summary
     summary = {
@@ -67,6 +76,8 @@ def build_artifact_zip(
         "samples_analysed": len(parsed_verdicts),
         "malicious_count": sum(1 for v in parsed_verdicts if v.get("is_malicious")),
         "yara_rules_generated": len(yara_rules),
+        "snort_rules_generated": len(snort_rules),
+        "cif_entries_count": len(all_cif_entries),
         "samples": [],
     }
     for v in parsed_verdicts:
@@ -77,6 +88,8 @@ def build_artifact_zip(
             "category": v.get("category", ""),
             "summary": v.get("summary", "")[:300],
             "has_yara": v.get("yara_rule") is not None,
+            "has_snort": v.get("snort_rules") is not None,
+            "has_cif": bool(v.get("cif_entries")),
             "analysis_time_sec": v.get("analysis_time_sec", 0),
         })
     if run_metadata:
@@ -108,7 +121,23 @@ def build_artifact_zip(
             combined_text = "\n\n".join(combined_yara)
             zf.writestr("yara_rules/combined_rules.yara", combined_text)
 
-        # 5) Pipeline summary
+        # 5) Individual Snort rules
+        for rule_filename, rule_text in snort_rules.items():
+            zf.writestr(f"snort_rules/{rule_filename}", rule_text)
+
+        # 6) Combined Snort rules file
+        if combined_snort:
+            combined_text = "\n\n".join(combined_snort)
+            zf.writestr("snort_rules/combined_rules.rules", combined_text)
+
+        # 7) CIF entries
+        if all_cif_entries:
+            zf.writestr(
+                "cif/cif_entries.json",
+                json.dumps(all_cif_entries, indent=2, ensure_ascii=False),
+            )
+
+        # 8) Pipeline summary
         zf.writestr(
             "pipeline_summary.json",
             json.dumps(summary, indent=2, ensure_ascii=False),
@@ -116,7 +145,8 @@ def build_artifact_zip(
 
     zip_size = os.path.getsize(zip_path)
     logger.info(
-        "Artifact ZIP created: %s (%d bytes, %d reports, %d YARA rules)",
-        zip_path, zip_size, len(parsed_verdicts), len(yara_rules),
+        "Artifact ZIP created: %s (%d bytes, %d reports, %d YARA, %d Snort, %d CIF)",
+        zip_path, zip_size, len(parsed_verdicts),
+        len(yara_rules), len(snort_rules), len(all_cif_entries),
     )
     return zip_path

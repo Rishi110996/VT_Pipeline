@@ -260,7 +260,7 @@ def _process_family_analysis(family, family_dir, cfg, pcfg, paths, entry,
             if os.path.isfile(sp): md5 = compute_md5(sp)
         if md5: md5_list.append(md5)
 
-    date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H%M%S")
     case_name = f"VT Pipeline - {family.capitalize()} - {date_str}"
     comments = build_case_comments(family, verdicts, scan_summary)
 

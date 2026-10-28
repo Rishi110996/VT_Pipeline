@@ -68,6 +68,10 @@ def parse_verdicts(report_dir: str) -> list:
             "yara_valid": (
                 gen_rules.get("yara_validation", {}) or {}
             ).get("valid", False),
+            "snort_rules": gen_rules.get("snort_rules"),
+            "snort_rules_path": gen_rules.get("snort_rules_path"),
+            "cif_entries": gen_rules.get("cif_entries", []) or [],
+            "cif_path": gen_rules.get("cif_path"),
             "category": (gen_rules.get("ioc_summary", {}) or {}).get("category", ""),
             "family": (gen_rules.get("ioc_summary", {}) or {}).get("family", ""),
             "analysis_time_sec": data.get("analysis_time_sec", 0),
@@ -84,10 +88,12 @@ def parse_verdicts(report_dir: str) -> list:
         )
 
     logger.info(
-        "Parsed %d verdict(s): %d malicious, %d with YARA rules",
+        "Parsed %d verdict(s): %d malicious, %d YARA, %d Snort, %d CIF",
         len(results),
         sum(1 for r in results if r["is_malicious"]),
         sum(1 for r in results if r["yara_rule"]),
+        sum(1 for r in results if r["snort_rules"]),
+        sum(1 for r in results if r["cif_entries"]),
     )
     return results
 
