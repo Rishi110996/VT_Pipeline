@@ -8,6 +8,7 @@ samples by SHA256 hash.
 import json
 import logging
 import os
+import shlex
 import subprocess
 
 logger = logging.getLogger("vt_pipeline.vt_search")
@@ -33,17 +34,14 @@ def search_family(vt_cli_path: str, query: str, limit: int = 20) -> list:
     list[dict]
         List of result dicts parsed from vt-cli JSON output.
     """
-    cmd = [
-        vt_cli_path, "search", query,
-        "--limit", str(limit),
-        "--format", "json",
-    ]
+    cmd = f"{shlex.quote(vt_cli_path)} search {shlex.quote(query)} --limit {limit} --format json"
     logger.info("VT search: %s (limit=%d)", query, limit)
-    logger.debug("Command: %s", " ".join(cmd))
+    logger.debug("Command: %s", cmd)
 
     try:
         proc = subprocess.run(
             cmd,
+            shell=True,
             capture_output=True,
             text=True,
             timeout=300,
