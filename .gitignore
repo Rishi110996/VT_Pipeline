@@ -37,3 +37,4 @@ config.yaml.example
 # Sample data (reference only, not for git)
 hirudo/
 hirudo.zip
+tmp_imgs/
