@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Pipeline runtime data
+data/
+logs/
+
+# Artifacts and samples
+*.zip
+!requirements.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Config files (contain names, API keys — never commit)
+config.yaml
+config.yaml.example
+
+# Sample data (reference only, not for git)
+hirudo/
+hirudo.zip
