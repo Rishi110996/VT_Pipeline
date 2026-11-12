@@ -69,6 +69,7 @@ def run_analysis(
         sample_dir,
         "--report-dir", report_dir,
         "--lease-hours", str(lease_hours),
+        "--pipeline-source", "VirusTotal",
     ]
     if generate_rules:
         cmd.append("--generate-rules")
